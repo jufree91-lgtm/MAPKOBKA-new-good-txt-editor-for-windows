@@ -37,6 +37,9 @@
       ],
       "artifactName": "${productName}-Setup-${version}.${ext}"
     },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
