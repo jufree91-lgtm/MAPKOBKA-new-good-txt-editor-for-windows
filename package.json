@@ -8,23 +8,49 @@
   "license": "MIT",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win portable"
+    "dist": "electron-builder --win nsis",
+    "dist:portable": "electron-builder --win portable",
+    "dist:all": "electron-builder --win nsis portable"
   },
   "build": {
     "appId": "com.anonim.blocnot",
     "productName": "Blocnot",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
       "src/**/*",
       "package.json"
     ],
+    "fileAssociations": [
+      {
+        "ext": ["txt", "log", "ini", "cfg", "md"],
+        "name": "Text Document",
+        "description": "Текстовый документ",
+        "role": "Editor"
+      }
+    ],
     "win": {
       "target": [
-        "portable"
+        { "target": "nsis", "arch": ["x64"] }
       ],
-      "artifactName": "Blocnot.exe"
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Blocnot",
+      "installerLanguages": ["ru_RU", "en_US"],
+      "language": "1049",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "uninstallDisplayName": "Blocnot",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
     }
   },
   "devDependencies": {
