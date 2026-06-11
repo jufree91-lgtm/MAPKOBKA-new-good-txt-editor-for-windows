@@ -3,6 +3,11 @@ const path = require('path');
 const fs = require('fs');
 
 const windows = new Set();
+const storePath = (name) => path.join(app.getPath('userData'), name + '.json');
+
+function readFileSafe(p) {
+  try { return { path: p, content: fs.readFileSync(p, 'utf-8') }; } catch (_) { return null; }
+}
 
 function getFileFromArgv(argv) {
   // skip executable, app dir (dev mode) and flags
@@ -16,12 +21,12 @@ function getFileFromArgv(argv) {
   return null;
 }
 
-function createWindow(filePath) {
+function createWindow(filePath, restoreSession) {
   const win = new BrowserWindow({
-    width: 980,
-    height: 660,
-    minWidth: 420,
-    minHeight: 300,
+    width: 1040,
+    height: 680,
+    minWidth: 500,
+    minHeight: 340,
     frame: false,
     transparent: true,
     backgroundColor: '#00000000',
@@ -36,48 +41,31 @@ function createWindow(filePath) {
 
   windows.add(win);
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-
   win.once('ready-to-show', () => win.show());
 
   win.webContents.on('did-finish-load', () => {
-    if (filePath) {
-      try {
-        const content = fs.readFileSync(filePath, 'utf-8');
-        win.webContents.send('file-opened', { path: filePath, content });
-      } catch (e) {
-        dialog.showErrorBox('Ошибка', 'Не удалось открыть файл:\n' + e.message);
-      }
-    }
+    win.webContents.send('init', {
+      restoreSession,
+      file: filePath ? readFileSafe(filePath) : null,
+    });
   });
 
-  let confirmedClose = false;
+  // Win11-style: no save prompt — session (incl. unsaved tabs) is flushed to disk
+  let closing = false;
   win.on('close', async (e) => {
-    if (confirmedClose) return;
+    if (closing) return;
     e.preventDefault();
-    let dirty = false;
+    closing = true;
     try {
-      dirty = await win.webContents.executeJavaScript('window.__isDirty ? window.__isDirty() : false');
+      const state = await win.webContents.executeJavaScript(
+        'window.__flushState ? window.__flushState() : null'
+      );
+      if (state) {
+        if (state.session) fs.writeFileSync(storePath('session'), JSON.stringify(state.session));
+        if (state.notes) fs.writeFileSync(storePath('notes'), JSON.stringify(state.notes));
+      }
     } catch (_) {}
-    if (!dirty) {
-      confirmedClose = true;
-      win.close();
-      return;
-    }
-    const { response } = await dialog.showMessageBox(win, {
-      type: 'question',
-      buttons: ['Сохранить', 'Не сохранять', 'Отмена'],
-      defaultId: 0,
-      cancelId: 2,
-      title: 'Несохранённые изменения',
-      message: 'Сохранить изменения перед закрытием?',
-    });
-    if (response === 0) {
-      const saved = await win.webContents.executeJavaScript('window.__saveForClose()');
-      if (saved) { confirmedClose = true; win.close(); }
-    } else if (response === 1) {
-      confirmedClose = true;
-      win.close();
-    }
+    win.close();
   });
 
   win.on('closed', () => windows.delete(win));
@@ -92,17 +80,21 @@ if (!gotLock) {
 } else {
   app.on('second-instance', (_e, argv) => {
     const file = getFileFromArgv(argv);
-    if (file) {
-      createWindow(file);
+    const [win] = windows;
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+      if (file) {
+        const data = readFileSafe(file);
+        if (data) win.webContents.send('file-opened', data);
+      }
     } else {
-      const [win] = windows;
-      if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
-      else createWindow(null);
+      createWindow(file, false);
     }
   });
 
   app.whenReady().then(() => {
-    createWindow(getFileFromArgv(process.argv));
+    createWindow(getFileFromArgv(process.argv), true);
   });
 }
 
@@ -110,18 +102,19 @@ app.on('window-all-closed', () => app.quit());
 
 /* ---------- IPC ---------- */
 
+const TEXT_FILTERS = [
+  { name: 'Текстовые файлы', extensions: ['txt', 'log', 'md', 'ini', 'cfg', 'csv', 'json', 'xml'] },
+  { name: 'Все файлы', extensions: ['*'] },
+];
+
 ipcMain.handle('dialog:open', async (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
   const { canceled, filePaths } = await dialog.showOpenDialog(win, {
-    filters: [
-      { name: 'Текстовые файлы', extensions: ['txt', 'log', 'md', 'ini', 'cfg', 'csv', 'json', 'xml'] },
-      { name: 'Все файлы', extensions: ['*'] },
-    ],
-    properties: ['openFile'],
+    filters: TEXT_FILTERS,
+    properties: ['openFile', 'multiSelections'],
   });
-  if (canceled || !filePaths[0]) return null;
-  const content = fs.readFileSync(filePaths[0], 'utf-8');
-  return { path: filePaths[0], content };
+  if (canceled) return [];
+  return filePaths.map(readFileSafe).filter(Boolean);
 });
 
 ipcMain.handle('file:save', async (e, { filePath, content }) => {
@@ -156,6 +149,18 @@ ipcMain.handle('file:saveAs', async (e, { content, currentPath }) => {
   return chosen;
 });
 
+ipcMain.handle('file:read', (_e, p) => {
+  try { return fs.readFileSync(p, 'utf-8'); } catch (_) { return null; }
+});
+
+ipcMain.handle('store:load', (_e, name) => {
+  try { return JSON.parse(fs.readFileSync(storePath(name), 'utf-8')); } catch (_) { return null; }
+});
+
+ipcMain.handle('store:save', (_e, { name, data }) => {
+  try { fs.writeFileSync(storePath(name), JSON.stringify(data)); return true; } catch (_) { return false; }
+});
+
 ipcMain.on('window:minimize', (e) => BrowserWindow.fromWebContents(e.sender)?.minimize());
 ipcMain.on('window:maximize', (e) => {
   const win = BrowserWindow.fromWebContents(e.sender);
@@ -163,4 +168,4 @@ ipcMain.on('window:maximize', (e) => {
   win.isMaximized() ? win.unmaximize() : win.maximize();
 });
 ipcMain.on('window:close', (e) => BrowserWindow.fromWebContents(e.sender)?.close());
-ipcMain.on('window:new', () => createWindow(null));
+ipcMain.on('window:new', () => createWindow(null, false));

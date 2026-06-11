@@ -1,7 +1,7 @@
 {
   "name": "blocnot",
   "productName": "Blocnot",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Минималистичный современный блокнот — замена Windows Notepad",
   "main": "src/main.js",
   "author": "AN onim",
