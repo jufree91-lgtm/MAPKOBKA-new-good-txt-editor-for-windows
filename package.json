@@ -1,0 +1,34 @@
+{
+  "name": "blocnot",
+  "productName": "Blocnot",
+  "version": "1.0.0",
+  "description": "Минималистичный современный блокнот — замена Windows Notepad",
+  "main": "src/main.js",
+  "author": "AN onim",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.anonim.blocnot",
+    "productName": "Blocnot",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "artifactName": "Blocnot.exe"
+    }
+  },
+  "devDependencies": {
+    "electron": "^42.4.0",
+    "electron-builder": "^26.15.2"
+  }
+}

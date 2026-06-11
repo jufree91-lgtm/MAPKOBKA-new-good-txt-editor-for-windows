@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'">
+  <title>Blocnot</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="graphite">
+  <div id="app">
+
+    <header id="titlebar">
+      <div class="tb-left">
+        <span class="app-dot"></span>
+        <span id="file-name">Без названия</span>
+        <span id="dirty-dot" hidden>●</span>
+      </div>
+      <div class="tb-drag"></div>
+      <div class="tb-controls">
+        <button id="btn-min" title="Свернуть"><svg width="10" height="10" viewBox="0 0 10 10"><line x1="1" y1="5" x2="9" y2="5" stroke="currentColor" stroke-width="1.2"/></svg></button>
+        <button id="btn-max" title="Развернуть"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="1.5" y="1.5" width="7" height="7" fill="none" stroke="currentColor" stroke-width="1.2"/></svg></button>
+        <button id="btn-close" title="Закрыть"><svg width="10" height="10" viewBox="0 0 10 10"><line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" stroke-width="1.2"/><line x1="9" y1="1" x2="1" y2="9" stroke="currentColor" stroke-width="1.2"/></svg></button>
+      </div>
+    </header>
+
+    <nav id="toolbar">
+      <div class="group">
+        <button id="btn-new" title="Новый файл (Ctrl+N)"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 1h5l3 3v9H3z" fill="none" stroke="currentColor"/><path d="M8 1v3h3" fill="none" stroke="currentColor"/></svg></button>
+        <button id="btn-open" title="Открыть (Ctrl+O)"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M1 3h4l1.5 2H13v7H1z" fill="none" stroke="currentColor"/></svg></button>
+        <button id="btn-save" title="Сохранить (Ctrl+S)"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M1 1h10l2 2v10H1z" fill="none" stroke="currentColor"/><rect x="4" y="8" width="6" height="5" fill="none" stroke="currentColor"/><rect x="4" y="1" width="5" height="3" fill="none" stroke="currentColor"/></svg></button>
+      </div>
+
+      <span class="sep"></span>
+
+      <div class="group">
+        <select id="font-family" title="Шрифт">
+          <option value="Consolas, monospace">Consolas</option>
+          <option value="'Cascadia Code', Consolas, monospace">Cascadia Code</option>
+          <option value="'Courier New', monospace">Courier New</option>
+          <option value="'Segoe UI', sans-serif" selected>Segoe UI</option>
+          <option value="Calibri, sans-serif">Calibri</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="Verdana, sans-serif">Verdana</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Times New Roman', serif">Times New Roman</option>
+          <option value="'Comic Sans MS', cursive">Comic Sans MS</option>
+        </select>
+        <div class="size-ctl">
+          <button id="size-down" title="Меньше">−</button>
+          <input id="font-size" type="number" min="8" max="72" value="15" title="Размер шрифта">
+          <button id="size-up" title="Больше">+</button>
+        </div>
+      </div>
+
+      <span class="sep"></span>
+
+      <div class="group">
+        <button id="fmt-bold" title="Жирный (Ctrl+B)"><b>Ж</b></button>
+        <button id="fmt-italic" title="Курсив (Ctrl+I)"><i>К</i></button>
+        <button id="fmt-underline" title="Подчёркнутый (Ctrl+U)"><u>Ч</u></button>
+        <button id="fmt-strike" title="Зачёркнутый"><s>З</s></button>
+        <button id="fmt-color" class="color-btn" title="Цвет текста (для заметок, в .txt не сохраняется)">
+          <span class="color-A">A</span><span id="color-bar" class="color-bar"></span>
+          <input id="text-color" type="color" value="#ff6b6b">
+        </button>
+        <button id="fmt-mark" class="color-btn" title="Выделить маркером (для заметок, в .txt не сохраняется)">
+          <span class="mark-A">A</span><span id="mark-bar" class="color-bar"></span>
+          <input id="mark-color" type="color" value="#fff176">
+        </button>
+        <button id="fmt-clear" title="Убрать форматирование"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M4 2h8M8 2 5 12" stroke="currentColor" fill="none"/><line x1="2" y1="12" x2="8" y2="12" stroke="currentColor"/><line x1="10" y1="9" x2="13" y2="12" stroke="currentColor"/><line x1="13" y1="9" x2="10" y2="12" stroke="currentColor"/></svg></button>
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="group">
+        <select id="theme-select" title="Тема">
+          <option value="graphite">Графит</option>
+          <option value="oled">Чёрный</option>
+          <option value="midnight">Полночь</option>
+          <option value="mocha">Мокко</option>
+          <option value="forest">Лес</option>
+          <option value="light">Светлая</option>
+        </select>
+        <div class="opacity-ctl" title="Прозрачность окна">
+          <svg width="13" height="13" viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor"/><path d="M7 1.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/></svg>
+          <input id="opacity" type="range" min="35" max="100" value="92">
+        </div>
+      </div>
+    </nav>
+
+    <main id="editor-wrap">
+      <div id="editor" contenteditable="true" spellcheck="false"></div>
+    </main>
+
+    <footer id="statusbar">
+      <span id="pos">Стр 1, Стлб 1</span>
+      <span class="sep-dot">·</span>
+      <span id="counts">0 слов · 0 символов</span>
+      <div class="spacer"></div>
+      <button id="wrap-toggle" class="status-btn active" title="Перенос строк">Перенос</button>
+      <span class="sep-dot">·</span>
+      <button id="zoom-reset" class="status-btn" title="Сбросить масштаб (Ctrl+0)">100%</button>
+      <span class="sep-dot">·</span>
+      <span>UTF-8</span>
+    </footer>
+
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
